@@ -1,0 +1,14 @@
+{
+  "author": "Carlos Jerez",
+  "name": "crashtrello",
+  "version": "0.0.1",
+  "engines": {
+    "node": "0.10.x",
+    "npm": "1.3.x"
+  },
+  "dependencies": {
+    "node-trello": "~0.1.4",
+    "express": "~3.4.4"
+  },
+  "devDependencies": {}
+}
