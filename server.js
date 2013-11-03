@@ -5,7 +5,9 @@ var appConfig = {
     consumerSecret : process.env.TRELLO_OAUTH_SECRET || 'TRELLO_OAUTH_SECRET',
     oauthToken : process.env.TRELLO_OAUTH_TOKEN || 'TRELLO_OAUTH_TOKEN',
     boardName : process.env.TRELLO_BOARD_NAME || 'TRELLO_BOARD_NAME',
-    listName : process.env.TRELLO_LIST_NAME || 'TRELLO_LIST_NAME'
+    listName : process.env.TRELLO_LIST_NAME || 'TRELLO_LIST_NAME',
+    username : process.env.BA_USERNAME || 'testUser',
+    password : process.env.BA_PASSWORD || 'testPass',
 };
 
 var express = require('express');
@@ -18,6 +20,9 @@ app.use(express.logger());
 app.configure(function(){
     app.use(express.bodyParser());
 });
+
+// Basic Autentication
+app.use(express.basicAuth(appConfig.username,appConfig.password));
 
 app.post('/', function(req, res){
 
@@ -91,6 +96,7 @@ app.post('/', function(req, res){
 
 app.listen(appConfig.port, function() {
     console.log('Listening on ' + appConfig.port);
+    console.log(appConfig);
 });
 
 function isEmptyObject(obj) {
