@@ -24,80 +24,87 @@ app.configure(function(){
 // Basic Autentication
 app.use(express.basicAuth(appConfig.username,appConfig.password));
 
-app.post('/', function(req, res){
+app.post('/', function(request, response){
 
-    var object = req.body;
+    var object = request.body;
 
     if (object.hasOwnProperty('event')
         && object.event == 'issue_impact_change'
         && object.hasOwnProperty('payload'))
     {
         //Search for BoardId
-        trelloObject.get('/1/members/me/boards', { fields: 'name, id, lists' }, function(err,data) {
-            if (err){
-                res.send(err,500);
+        trelloObject.get('/1/members/me/boards', { fields: 'name, id, lists' }, function(error, data) {
+            if (error){
+                response.send(error,500);
             }else{
-                var boardId;
-                for (var index in data) {
-                    var board = data[index];
-                    if(board.name.trim().toLocaleLowerCase() === appConfig.boardName.trim().toLowerCase()){
-                        boardId = board.id;
-                        break;
-                    }
-                }
+                var boardId = searchIdByName(data,appConfig.boardName);
+
                 if(boardId){
                     //Search for ListId
                     trelloObject.get('/1/boards/'+ boardId +'/lists', {lists:'open' , list_fields:'name', fields: 'name' }, function(err,data) {
-                        if (err){
-                            res.send(err,500);
+                        if (error){
+                            response.send(error,500);
                         }else{
-                            var listId;
-                            for (var index in data) {
-                                var list = data[index];
-                                if(list.name.trim().toLocaleLowerCase() === appConfig.listName.trim().toLowerCase()){
-                                    listId = list.id;
-                                    break;
-                                }
-                            }
+                            var listId = searchIdByName(data,appConfig.listName);
                             //If found ListId, try to create card
                             if(listId){
-                                //Card Data
-                                var card ={
-                                    name : object.payload.title,
-                                    desc : object.payload.url,
-                                    due : null,
-                                    idList : listId
-                                };
-                                //Post card data
-                                trelloObject.post('/1/cards/', card, function(err, data) {
-                                    if (err){
-                                        res.send(err,500);
-                                    }else{
-                                        //Posted Ok
-                                        res.send('ok',200);
-                                        console.log(data);
-                                    }
-                                });
+                                createCard(object.payload, listId, response)
                             }else{
-                                res.send('List not found',404);
+                                response.send('List not found',404);
                             }
                         }
                     });
                 }else{
-                    res.send('Board not found',404);
+                    response.send('Board not found',404);
                 }
             }
         });
     }else{
-        res.send('Bad Request',400);
+        response.send('Bad Request',400);
     }
 
 });
+
+
 
 app.listen(appConfig.port, function() {
     console.log('Listening on ' + appConfig.port);
     console.log(appConfig);
 });
+
+
+function createCard(payload, listId, response){
+    //Card Data
+    var card ={
+        name : payload.title,
+        desc : payload.url,
+        due : null,
+        idList : listId
+    };
+    //Post card data
+    trelloObject.post('/1/cards/', card, function(err, data) {
+        if (err){
+            response.send(err,500);
+        }else{
+            //Posted Ok
+            response.send('ok',200);
+            console.log(data);
+        }
+    });
+}
+
+function searchIdByName(collection, name) {
+    var id = null;
+    for (var index in collection) {
+        var element = collection[index];
+        if(element.name.trim().toLocaleLowerCase() === name.trim().toLowerCase()){
+            id = element.id;
+            break;
+        }
+    }
+    return id;
+}
+
 
 function isEmptyObject(obj) {
     return !Object.keys(obj).length;
